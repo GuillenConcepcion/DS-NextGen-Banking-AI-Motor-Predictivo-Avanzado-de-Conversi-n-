@@ -7,4 +7,21 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+venv/
+env/
+
+# MLOps & Experiment Tracking
+mlruns/
+mlartifacts/
+models/
+reports/
+catboost_info/
+
+# Environment variables
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/

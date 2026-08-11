@@ -1,0 +1,57 @@
+
+services:
+  mlflow-tracking:
+    image: python:3.12-slim
+    # Instalamos mlflow y el conector de postgres antes de iniciar el server.
+    # Exponemos el host 0.0.0.0 para que sea accesible desde otros contenedores y el host.
+    command: >
+      bash -c "pip install mlflow psycopg2-binary &&
+      mlflow server 
+      --host 0.0.0.0 
+      --backend-store-uri postgresql://mlflow:password@db:5432/mlflow 
+      --default-artifact-root /mlflow-artifacts"
+    volumes:
+      - mlflow-artifacts:/mlflow-artifacts
+    ports:
+      - "0.0.0.0:5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000')"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+
+  streamlit-app:
+    build:
+      context: .
+      dockerfile: Containerfile
+    ports:
+      - "0.0.0.0:8501:8501"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow-tracking:5000
+      - PYTHONPATH=/app/src
+    volumes:
+      - mlflow-artifacts:/mlflow-artifacts
+    depends_on:
+      mlflow-tracking:
+        condition: service_healthy
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mlflow
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mlflow-artifacts:
+  postgres-data:

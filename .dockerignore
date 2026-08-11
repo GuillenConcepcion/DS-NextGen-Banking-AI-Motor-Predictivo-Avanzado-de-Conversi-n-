@@ -1,0 +1,28 @@
+# Environments
+venv/
+.venv/
+env/
+.env
+
+# Cache
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.pyc
+
+# MLflow & Data
+mlruns/
+mlartifacts/
+data/raw/
+data/processed/
+data/external/
+models/
+
+# Git & DVC
+.git/
+.dvc/
+.dvcignore
+
+# OS files
+.DS_Store
