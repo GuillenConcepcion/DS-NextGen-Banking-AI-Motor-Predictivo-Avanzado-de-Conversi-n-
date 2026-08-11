@@ -64,29 +64,45 @@ Este repositorio demuestra ingeniería de Machine Learning a nivel de producció
 The project leverages a decoupled microservices architecture via Podman Compose, separating the frontend interface, the experiment tracker, and the metadata database.
 
 ```mermaid
-graph TD
-    subgraph DataTracking ["Data & Tracking"]
-        DVC[("DVC/S3")] --> |Data Versioning| TrainScript("src/models/train_model.py")
-        TrainScript -->|Logs metrics & artifacts| MLflow("MLflow Server")
-        MLflow --> |Stores Metadata| DB[("PostgreSQL")]
-        MLflow --> |Stores Artifacts| LocalFS["Shared Volume: /mlflow-artifacts"]
+flowchart LR
+    %% Definición de Subgrafos Estructurados
+    
+    subgraph DataStorage ["Data & Storage"]
+        direction TB
+        DVC[("DVC / S3 (Raw Data)")]
+        DB[("PostgreSQL (Metadata)")]
+        Vol["Local Volume (Artifacts)"]
     end
     
-    subgraph CICD ["CI/CD & Testing"]
-        GitHubActions["GitHub Actions"] --> |uv pip & pytest| CoreUtils
-        GitHubActions --> |validate_model.py| MLflow
+    subgraph Pipeline ["Training & CI/CD"]
+        direction TB
+        GH["GitHub Actions"]
+        Train["train_model.py"]
+        GH -.->|Triggers CI| Train
     end
 
-    subgraph ProductionApp ["Production App"]
-        User(("End User")) --> |Inputs Data| Streamlit["Streamlit Frontend"]
-        Streamlit --> |1. Fetches @champion metadata| MLflow
-        Streamlit --> |2. Reads physical model| LocalFS
-        Streamlit --> |Displays Prediction| User
+    subgraph Tracking ["Model Registry"]
+        direction TB
+        MLflow["MLflow Server"]
+    end
+
+    subgraph Production ["Production Serving"]
+        direction TB
+        UI["Streamlit Frontend"]
+        User(("End User"))
     end
     
-    subgraph Observability ["Observability"]
-        Evidently("Evidently AI") -.-> |Monitors Data Drift| Streamlit
-    end
+    %% Conexiones Lineales Principales (Evitando Cruces)
+    DVC -->|Feeds Data| Train
+    Train -->|Logs Experiments| MLflow
+    
+    MLflow -->|Writes| DB
+    MLflow -->|Writes| Vol
+    
+    MLflow -.->|Resolves @champion| UI
+    Vol -.->|Loads Model Weights| UI
+    
+    UI <-->|Predicts| User
 ```
 
 ---
