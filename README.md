@@ -65,27 +65,27 @@ The project leverages a decoupled microservices architecture via Podman Compose,
 
 ```mermaid
 graph TD
-    subgraph Data & Tracking
-        DVC[(DVC/S3)] --> |Data Versioning| TrainScript(src/models/train_model.py)
-        TrainScript -->|Logs metrics & artifacts| MLflow(MLflow Server)
-        MLflow --> |Stores Metadata| DB[(PostgreSQL)]
-        MLflow --> |Stores Artifacts| LocalFS[Shared Volume: /mlflow-artifacts]
+    subgraph DataTracking ["Data & Tracking"]
+        DVC[("DVC/S3")] --> |Data Versioning| TrainScript("src/models/train_model.py")
+        TrainScript -->|Logs metrics & artifacts| MLflow("MLflow Server")
+        MLflow --> |Stores Metadata| DB[("PostgreSQL")]
+        MLflow --> |Stores Artifacts| LocalFS["Shared Volume: /mlflow-artifacts"]
     end
     
-    subgraph CI/CD & Testing
-        GitHubActions[GitHub Actions] --> |uv pip & pytest| CoreUtils
+    subgraph CICD ["CI/CD & Testing"]
+        GitHubActions["GitHub Actions"] --> |uv pip & pytest| CoreUtils
         GitHubActions --> |validate_model.py| MLflow
     end
 
-    subgraph Production App
-        User((End User)) --> |Inputs Data| Streamlit[Streamlit Frontend]
+    subgraph ProductionApp ["Production App"]
+        User(("End User")) --> |Inputs Data| Streamlit["Streamlit Frontend"]
         Streamlit --> |1. Fetches @champion metadata| MLflow
         Streamlit --> |2. Reads physical model| LocalFS
         Streamlit --> |Displays Prediction| User
     end
     
-    subgraph Observability
-        Evidently(Evidently AI) -.-> |Monitors Data Drift| Streamlit
+    subgraph Observability ["Observability"]
+        Evidently("Evidently AI") -.-> |Monitors Data Drift| Streamlit
     end
 ```
 
